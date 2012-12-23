@@ -99,6 +99,19 @@
       }
 
   %body
+    #pubnub{"pub-key" => "pub-c-e22a8e3b-38a1-402a-82ed-0b191f241040",
+			"sub-key" => "sub-c-889ce9ac-4c9b-11e2-ab93-12313f022c90"}
+    %script{:src => "http://cdn.pubnub.com/pubnub-3.4.min.js"}
+    :javascript
+   
+        PUBNUB.subscribe({
+            channel : "my_channel",
+            message : function(m){console.log('message = ' + m);},
+            connect : function(channel) {
+              PUBNUB.publish({ channel : "my_channel", message : "Hi" })
+            }
+        });
+  
     :javascript
       var localVideo;
       var miniVideo;
@@ -126,7 +139,7 @@
         miniVideo = document.getElementById("miniVideo");
         remoteVideo = document.getElementById("remoteVideo");
         resetStatus();
-        openChannel('AHRlWrrbM4EIMfQmZP9ZleXOH3dk5usY8G488hc02nS3NgVsoHKHXHrTVgvWukS8hMxd5OGfwi_zLc0h93KLAjvxNzhEV7W8W2yf_Z4AnhLswSc_8Pvv9Js');
+        //openChannel('AHRlWrrbM4EIMfQmZP9ZleXOH3dk5usY8G488hc02nS3NgVsoHKHXHrTVgvWukS8hMxd5OGfwi_zLc0h93KLAjvxNzhEV7W8W2yf_Z4AnhLswSc_8Pvv9Js');
         startTokenRefresh();
         doGetUserMedia();
       }
