@@ -102,15 +102,6 @@
     #pubnub{"pub-key" => "pub-c-e22a8e3b-38a1-402a-82ed-0b191f241040",
 			"sub-key" => "sub-c-889ce9ac-4c9b-11e2-ab93-12313f022c90"}
     %script{:src => "http://cdn.pubnub.com/pubnub-3.4.min.js"}
-    :javascript
-   
-        PUBNUB.subscribe({
-            channel : "my_channel",
-            message : function(m){console.log('message = ' + m);},
-            connect : function(channel) {
-              PUBNUB.publish({ channel : "my_channel", message : "Hi" })
-            }
-        });
   
     :javascript
       var localVideo;
@@ -121,9 +112,11 @@
       var channel;
       var channelReady = false;
       var channelRefreshTimer;
+      var offerStr;
+      var answerStr;
       var pc;
       var socket;
-      var initiator = #{@initiator};
+      var initiator = false;
       var started = false;
       // Set up audio and video regardless of what devices are present.
       var mediaConstraints = {'mandatory': {
@@ -131,6 +124,13 @@
                                 'OfferToReceiveVideo':true }};
       var isVideoMuted = false;
       var isAudioMuted = false;
+      
+      var MSG_HELLO = "hello";
+      var MSG_SDP = "sdp";
+      
+      var SDP_OFFER = "offer";
+      var SDP_ANSWER = "answer";
+      var SDP_CANDIDATE = "candidate";
 
       function initialize() {
         console.log("Initializing; room=123456789.");
@@ -140,8 +140,66 @@
         remoteVideo = document.getElementById("remoteVideo");
         resetStatus();
         //openChannel('AHRlWrrbM4EIMfQmZP9ZleXOH3dk5usY8G488hc02nS3NgVsoHKHXHrTVgvWukS8hMxd5OGfwi_zLc0h93KLAjvxNzhEV7W8W2yf_Z4AnhLswSc_8Pvv9Js');
-        startTokenRefresh();
+        //startTokenRefresh();
         doGetUserMedia();
+      }
+      
+      function listen() {
+        PUBNUB.subscribe({
+            channel : "my_channel",
+            message : function(m){
+              var json = JSON.parse(m);
+              if (json['client-id'] != "#{@client_id}") {
+                if (json['type'] == MSG_HELLO) {
+                  console.log('hello message from peer');
+                  createPeerConnection();
+                  pc.addStream(localStream);
+                  if (#{@time} > parseInt(json['time'])) {
+                    initiator = true;
+                    doCall();
+                  } else {
+                    // say hello back
+                    PUBNUB.publish({ channel : "my_channel",
+                      message : "{\"client-id\":\"#{@client_id}\"," +
+                                "\"type\":\"" + MSG_HELLO + "\"," +
+                                "\"time\":\"#{@time}\"}" });
+                  }
+                } else if (json['type'] == MSG_SDP) {
+                  if (json['sdp-type'] == SDP_OFFER + "1") {
+                    offerStr = json['sdp-body'];
+                  } else if (json['sdp-type'] == SDP_OFFER + "2") {
+                    offerStr = offerStr + json['sdp-body'];
+                    var sdp = {"type": SDP_OFFER, "sdp": offerStr};
+                    pc.setRemoteDescription(new RTCSessionDescription(sdp));
+                    channelReady = true;
+                    doAnswer();
+                  } else if (json['sdp-type'] == SDP_ANSWER + "1") {
+                    answerStr = json['sdp-body'];
+                  } else if (json['sdp-type'] == SDP_ANSWER + "2") {
+                    answerStr = answerStr + json['sdp-body'];
+                    var sdp = {"type": SDP_ANSWER, "sdp": answerStr};
+                    channelReady = true;
+                    pc.setRemoteDescription(new RTCSessionDescription(sdp));
+                  } else if (json['sdp-type'] == SDP_CANDIDATE) {
+                    if (channelReady) {
+                      var label = parseInt(json['sdp-label']);
+                      var canStr = json['sdp-candidate'];
+                      console.log('candidate = ' + canStr);
+                      var candidate = new RTCIceCandidate({sdpMLineIndex:label,
+                                                        candidate:canStr});
+                      pc.addIceCandidate(candidate);
+                    }
+                  }
+                }
+              }
+            },
+            connect : function(channel) {
+              PUBNUB.publish({ channel : "my_channel",
+                message : "{\"client-id\":\"#{@client_id}\"," +
+                          "\"type\":\"" + MSG_HELLO + "\"," +
+                          "\"time\":\"#{@time}\"}" });
+            }
+        });
       }
 
       function openChannel(channelToken) {
@@ -234,12 +292,51 @@
       }
 
       function sendMessage(message) {
-        var msgString = JSON.stringify(message);
-        console.log('C->S: ' + msgString);
-        path = '/message?r=123456789' + '&u={{ me }}';
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', path, true);
-        xhr.send(msgString);
+        if (message['type'] == SDP_OFFER) {
+          var jsonStr = JSON.stringify(message['sdp']);
+          jsonStr = jsonStr.substring(1, jsonStr.length - 1);
+          var body1 = jsonStr.substring(0, jsonStr.length / 2);
+          var body2 = jsonStr.substring(jsonStr.length / 2)
+          var sdpMessage1 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"offer1\"," +
+                    "\"sdp-body\":\"" + body1 + "\"}";
+          PUBNUB.publish({ channel : "my_channel",
+              message : sdpMessage1 });
+          
+          var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"offer2\"," +
+                    "\"sdp-body\":\"" + body2 + "\"}";
+          PUBNUB.publish({ channel : "my_channel",
+              message : sdpMessage2 });
+        } else if (message['type'] == SDP_ANSWER) {
+          var jsonStr = JSON.stringify(message['sdp']);
+          jsonStr = jsonStr.substring(1, jsonStr.length - 1);
+          var body1 = jsonStr.substring(0, jsonStr.length / 2);
+          var body2 = jsonStr.substring(jsonStr.length / 2)
+          var sdpMessage1 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"answer1\"," +
+                    "\"sdp-body\":\"" + body1 + "\"}";
+          PUBNUB.publish({ channel : "my_channel",
+              message : sdpMessage1 });
+          
+          var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"answer2\"," +
+                    "\"sdp-body\":\"" + body2 + "\"}";
+          PUBNUB.publish({ channel : "my_channel",
+              message : sdpMessage2 });
+        } else if (message['type'] == SDP_CANDIDATE) {
+          var sdpMessage = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"" + message['type'] + "\"," +
+                    "\"sdp-label\":\"" + message['label'] + "\"," +
+                    "\"sdp-candidate\":" + JSON.stringify(message['candidate']) + "}";
+          PUBNUB.publish({ channel : "my_channel",
+            message : sdpMessage });
+        }
       }
 
       function processSignalingMessage(message) {
@@ -288,12 +385,13 @@
         localVideo.style.opacity = 1;
         localStream = stream;
         // Caller creates PeerConnection.
-        if (initiator) maybeStart();
+        //if (initiator) maybeStart();
+        listen();
       }
 
       function onUserMediaError(error) {
         console.log("Failed to get access to local media. Error code was " + error.code);
-        alert("Failed to get access to local media. Error code was " + error.code + ".");
+        //alert("Failed to get access to local media. Error code was " + error.code + ".");
       }
 
       function onIceCandidate(event) {
