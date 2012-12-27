@@ -7,6 +7,7 @@ gem 'rails', '3.2.8'
 
 group :production, :staging do
   gem 'pg'
+  gem 'libv8'
   gem 'therubyracer'
 end
 group :development do
