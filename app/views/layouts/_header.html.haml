@@ -1,0 +1,11 @@
+%header.navbar.navbar-fixed-top
+  %nav.navbar-inner
+    .container
+      = link_to @title, root_path, :class => 'brand logo'
+      %ul.nav
+        <li #{if controller.controller_name == 'main' then 'class=active' end}>#{link_to 'Home', '/'}
+        <li #{if controller.controller_name == 'dialers' then 'class=active' end}>#{link_to 'Dialers', :controller => :dialers, :action => :index}
+      %ul.nav.pull-right
+        - if session[:asana_key]
+          %li
+          = link_to 'Logout', :controller => :asana, :action => :logout

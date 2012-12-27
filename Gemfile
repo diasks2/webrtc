@@ -49,3 +49,4 @@ gem 'jquery-rails'
 # gem 'debugger'
 
 gem 'haml-rails'
+gem 'bootstrap-sass'
