@@ -1,0 +1,30 @@
+#pubnub{"pub-key" => "pub-c-e22a8e3b-38a1-402a-82ed-0b191f241040",
+			"sub-key" => "sub-c-889ce9ac-4c9b-11e2-ab93-12313f022c90"}
+%script{:src => "http://cdn.pubnub.com/pubnub-3.4.min.js"}
+
+:javascript
+  var CHANNEL = "video_chat_channel";
+
+  function onConnect() {
+    console.log('onConnect');
+    PUBNUB.here_now({
+      channel: CHANNEL,
+      callback: onPresence
+    });
+  }
+  
+  function onReceive() {
+    console.log('onReceive');
+  }
+  
+  function onPresence(details) {
+    console.log('onPresence ' + details);
+  }
+
+  // Open Bidirectional Socket Connection
+  PUBNUB.subscribe({
+      channel  : CHANNEL, // Channel Name
+      connect  : onConnect, // OnConnect Callback
+      callback : onReceive,  // Received Message Callback
+      presence : onPresence // Presence Callback
+  });

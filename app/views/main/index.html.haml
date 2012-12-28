@@ -5,6 +5,7 @@
   %h4 Video and Audio Chat from T-Mobile
   - if @profile
     Hello #{@profile['first_name']}!
+    = render "online_users"
   - else
     #login
       %a{:href => url_for(:controller => 'auth', :action => 'facebook_authenticate')}
