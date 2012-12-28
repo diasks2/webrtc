@@ -1,0 +1,15 @@
+- if !flash[:notice].nil?
+  - class_str = "alert alert-success flash-notice"
+- elsif !flash[:error].nil?
+  - class_str = "alert alert-error flash-error"
+- elsif !flash[:alert].nil?
+  - class_str = "alert  alert-error"
+- elsif !flash[:info].nil?
+  - class_str = "alert alert-info flash-info"
+
+- msg = flash[:notice] || flash[:error] || flash[:alert] || flash[:info]
+
+- if msg
+  %div{:class => class_str}
+    %button.close{"data-dismiss" => "alert"} ×
+    = msg

@@ -50,3 +50,4 @@ gem 'jquery-rails'
 
 gem 'haml-rails'
 gem 'bootstrap-sass'
+gem 'koala'

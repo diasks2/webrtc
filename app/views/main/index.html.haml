@@ -1,0 +1,13 @@
+#flash
+  = render 'shared/flash_msg'
+
+#main-content
+  %h4 Video and Audio Chat from T-Mobile
+  - if @profile
+    Hello #{@profile['first_name']}!
+  - else
+    #login
+      %a{:href => url_for(:controller => 'auth', :action => 'facebook_authenticate')}
+        .btn
+          = image_tag "f_logo.png", :width => 25
+          %span.text Login With Facebook

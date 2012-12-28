@@ -1,4 +1,10 @@
 WebrtcRails::Application.routes.draw do
+  get "auth/facebook_authenticate"
+
+  get "auth/facebook_callback"
+  
+  get "auth/logout"
+
   resources "dialers"
 
   get "main/index"

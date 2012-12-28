@@ -1,6 +1,8 @@
 class MainController < ApplicationController
   def index
-    @client_id = Digest::SHA1.hexdigest([Time.now, rand].join).encode('UTF-8')
-    @time = Time.now.to_i
+    if session[:oauth_access_token] then
+      graph = Koala::Facebook::API.new(session[:oauth_access_token])
+      @profile = graph.get_object("me")
+    end
   end
 end

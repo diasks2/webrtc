@@ -4,8 +4,8 @@
       = link_to @title, root_path, :class => 'brand logo'
       %ul.nav
         <li #{if controller.controller_name == 'main' then 'class=active' end}>#{link_to 'Home', '/'}
-        <li #{if controller.controller_name == 'dialers' then 'class=active' end}>#{link_to 'Dialers', :controller => :dialers, :action => :index}
+        <li #{if controller.controller_name == 'dialers' then 'class=active' end}>#{link_to 'Dialer', :controller => :dialers, :action => :index}
       %ul.nav.pull-right
-        - if session[:asana_key]
+        - if @profile
           %li
-          = link_to 'Logout', :controller => :asana, :action => :logout
+            = link_to 'Logout', :controller => :auth, :action => :logout
