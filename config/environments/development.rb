@@ -34,4 +34,8 @@ WebrtcRails::Application.configure do
 
   # Expands the lines which load the assets
   config.assets.debug = true
+  
+  config.host = 'localhost:3000'
+  config.facebook_app_id = 403675413042519
+  config.facebook_app_secret = '6c512329a3696bc33573e2d2ac438dde'
 end
