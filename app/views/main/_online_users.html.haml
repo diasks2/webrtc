@@ -1,30 +1,74 @@
-#pubnub{"pub-key" => "pub-c-e22a8e3b-38a1-402a-82ed-0b191f241040",
-			"sub-key" => "sub-c-889ce9ac-4c9b-11e2-ab93-12313f022c90"}
-%script{:src => "http://cdn.pubnub.com/pubnub-3.4.min.js"}
+%script{:src => "http://cdn.pubnub.com/socket.io.min.js"}
 
 :javascript
-  var CHANNEL = "video_chat_channel";
+  var pubnub_setup = {
+      channel       : 'video_chat_channel',
+      publish_key   : 'pub-c-e22a8e3b-38a1-402a-82ed-0b191f241040',
+      subscribe_key : 'sub-c-889ce9ac-4c9b-11e2-ab93-12313f022c90'
+  };
 
-  function onConnect() {
-    console.log('onConnect');
-    PUBNUB.here_now({
-      channel: CHANNEL,
-      callback: onPresence
-    });
-  }
+  var socket = io.connect( 'http://pubsub.pubnub.com', pubnub_setup );
   
-  function onReceive() {
-    console.log('onReceive');
-  }
-  
-  function onPresence(details) {
-    console.log('onPresence ' + details);
-  }
+  var MSG_HELLO = "hello";
+  var MSG_HELLO_BACK = "hello_back";
+  var MSG_BYE = "bye";
 
-  // Open Bidirectional Socket Connection
-  PUBNUB.subscribe({
-      channel  : CHANNEL, // Channel Name
-      connect  : onConnect, // OnConnect Callback
-      callback : onReceive,  // Received Message Callback
-      presence : onPresence // Presence Callback
+  socket.on( 'connect', function() {
+    socket.send("{\"client-id\":\"#{@client_id}\"," +
+                "\"type\":\"" + MSG_HELLO + "\"," +
+                "\"time\":\"#{@time}\"," +
+                "\"first_name\":\"#{@profile['first_name']}\"," +
+                "\"last_name\":\"#{@profile['last_name']}\"}");
   });
+
+  socket.on( 'message', function(message) {
+    var json = JSON.parse(message);
+    console.log(message);
+    if (json['client-id'] != "#{@client_id}") {
+      if (json['type'] == MSG_HELLO) {
+        $('#online-users').append(
+          "<div id='" + json['client-id'] + "'>"+ json['first_name'] + " " + json['last_name'] +
+          " <button type='button' class='btn' data-loading-text='Calling...'>Call</button>" +
+          "</div>");
+          
+          
+        socket.send("{\"client-id\":\"#{@client_id}\"," +
+                    "\"to-client-id\":\"" + json['client-id'] + "\"," +
+                    "\"type\":\"" + MSG_HELLO_BACK + "\"," +
+                    "\"time\":\"#{@time}\"," +
+                    "\"first_name\":\"#{@profile['first_name']}\"," +
+                    "\"last_name\":\"#{@profile['last_name']}\"}");
+      }
+      
+      if (json['type'] == MSG_BYE) {
+         var element = $("#" + json['client-id']);
+         element.remove();
+      }
+    }
+    if (json['to-client-id'] == "#{@client_id}") {
+      if (json['type'] == MSG_HELLO_BACK) {
+        $('#online-users').append(
+          "<div id='" + json['client-id'] + "'>"+ json['first_name'] + " " + json['last_name'] +
+          " <button type='button' class='btn' data-loading-text='Calling...'>Call</button>" +
+          "</div>");
+      }
+    }
+    
+  } );
+  
+  
+  socket.on( 'disconnect', function() {
+    socket.send("{\"client-id\":\"#{@client_id}\"," +
+                "\"type\":\"" + MSG_BYE + "\"," +
+                "\"time\":\"#{@time}\"}");
+  });
+
+  window.onbeforeunload = function() {
+    socket.send("{\"client-id\":\"#{@client_id}\"," +
+                "\"type\":\"" + MSG_BYE + "\"," +
+                "\"time\":\"#{@time}\"}");
+  };
+
+%h4 Online Now
+
+#online-users
