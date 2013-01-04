@@ -19,6 +19,7 @@
   var offerStr;
   var answerStr;
   var channelReady = false;
+  var started = false;
   
   var MSG_HELLO = "hello";
   var MSG_HELLO_BACK = "hello_back";
@@ -75,7 +76,7 @@
           answerStr = answerStr + json['sdp-body'];
           var sdp = {"type": SDP_ANSWER, "sdp": answerStr};
           pc.setRemoteDescription(new RTCSessionDescription(sdp));
-        } else if (json['sdp-type'] == SDP_CANDIDATE) {
+        } else if (json['sdp-type'] == SDP_CANDIDATE && started) {
           if (channelReady) {
             var label = parseInt(json['sdp-label']);
             var canStr = json['sdp-candidate'];
@@ -143,6 +144,7 @@
     createPeerConnection();
     pc.addStream(localStream);
     channelReady = true;
+    started = true;
     if (initiator == true)
       doCall();
     else {
@@ -376,9 +378,10 @@
 
 #online-users
 
-#card
-  %video#localVideo{:autoplay => "autoplay", :height => "500", :width => "500", :style => "position: absolute; left: 30%; z-index: 100;"}
-
-  %video#remoteVideo{:autoplay => "autoplay", :height => "500", :width => "500", :style => "position: absolute; left: 30%; z-index: 110;"}
-
-%video#miniVideo{:autoplay => "autoplay", :height => "150", :width => "150", :style => "position: absolute; left: 75%; z-index: 100;"}}
+#card{:style => "float: left; width: 100%;"}
+  #local
+    %video#localVideo{:autoplay => "autoplay", :height => "100%", :width => "100%"}
+  #remote
+    %video#remoteVideo{:autoplay => "autoplay", :height => "100%", :width => "100%"}
+#mini
+  %video#miniVideo{:autoplay => "autoplay", :height => "100%", :width => "100%"}
