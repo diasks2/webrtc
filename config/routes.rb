@@ -8,6 +8,7 @@ WebrtcRails::Application.routes.draw do
   resources "dialers"
 
   get "main/index"
+  post "main/wait"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.
