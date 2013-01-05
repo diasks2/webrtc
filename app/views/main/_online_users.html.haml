@@ -10,6 +10,7 @@
   var socket = io.connect( 'http://pubsub.pubnub.com', pubnub_setup );
   var pc;
   var localStream;
+  var remoteStream;
   var localVideo;
   var remoteVideo;
   var miniVideo;
@@ -20,11 +21,15 @@
   var answerStr;
   var channelReady = false;
   var started = false;
+  var callerId;
+  var calleeId;
   
   var MSG_HELLO = "hello";
   var MSG_HELLO_BACK = "hello_back";
   var MSG_BYE = "bye";
+  var MSG_CALL = "call";
   var MSG_SDP = "sdp";
+  var MSG_CALL_READY = "call_ready";
   
   var SDP_OFFER = "offer";
   var SDP_ANSWER = "answer";
@@ -44,10 +49,11 @@
 
   socket.on( 'message', function(message) {
     var json = JSON.parse(message);
-    console.log(message);
-    
+
     // if message originator is other client
     if (json['client-id'] != "#{@client_id}") {
+      console.log(message);
+    
       if (json['type'] == MSG_HELLO) {
         $('#online-users').append(
           "<div id='" + json['client-id'] + "'>"+ json['first_name'] + " " + json['last_name'] +
@@ -63,23 +69,37 @@
       } else if (json['type'] == MSG_BYE) {
         var element = $("#" + json['client-id']);
         element.remove();
+      } else if (json['type'] == MSG_CALL) {
+        if (json['to-client-id'] == "#{@client_id}") {
+          callerId = json['client-id'];
+          doGetUserMedia();
+        }
+      } else if (json['type'] == MSG_CALL_READY) {
+        if (json['to-client-id'] == "#{@client_id}") {
+          doCall();
+        }
       } else if (json['type'] == MSG_SDP) {
         if (json['sdp-type'] == SDP_OFFER + "1") {
           offerStr = json['sdp-body'];
         } else if (json['sdp-type'] == SDP_OFFER + "2") {
           offerStr = offerStr + json['sdp-body'];
           offerSdp = {"type": SDP_OFFER, "sdp": offerStr};
-          doGetUserMedia();
+          pc.setRemoteDescription(new RTCSessionDescription(offerSdp));
+          channelReady = true;
+          doAnswer();
         } else if (json['sdp-type'] == SDP_ANSWER + "1") {
           answerStr = json['sdp-body'];
         } else if (json['sdp-type'] == SDP_ANSWER + "2") {
           answerStr = answerStr + json['sdp-body'];
           var sdp = {"type": SDP_ANSWER, "sdp": answerStr};
           pc.setRemoteDescription(new RTCSessionDescription(sdp));
-        } else if (json['sdp-type'] == SDP_CANDIDATE && started) {
-          if (channelReady) {
+          channelReady = true;
+        } else if (json['sdp-type'] == SDP_CANDIDATE) {
+          console.log('started = ' + started);
+          if (started && channelReady) {
             var label = parseInt(json['sdp-label']);
-            var canStr = json['sdp-candidate'];
+            var canStr = JSON.stringify(json['sdp-candidate']);
+            canStr = canStr.substring(1, canStr.length - 1);
             console.log('candidate = ' + canStr);
             var candidate = new RTCIceCandidate({sdpMLineIndex:label,
                                               candidate:canStr});
@@ -102,6 +122,7 @@
   } );
 
   window.onbeforeunload = function() {
+    stop();
     socket.send("{\"client-id\":\"#{@client_id}\"," +
                 "\"type\":\"" + MSG_BYE + "\"," +
                 "\"time\":\"#{@time}\"}");
@@ -112,8 +133,23 @@
       $.ajax({url: '/main/wait', async: false, type: 'POST', data: { foo: "bar" }});
   }
   
+  function stop() {
+    if (localStream) {
+      localStream.stop();
+      localStream = null;
+    }
+    started = false;
+    isAudioMuted = false;
+    isVideoMuted = false;
+    if (pc != null) {
+      pc.close();
+      pc = null;
+    }
+  }
+  
   function onCallClick(client_id) {
     initiator = true;
+    calleeId = client_id;
     doGetUserMedia();
   }
 
@@ -143,13 +179,18 @@
     localStream = stream;
     createPeerConnection();
     pc.addStream(localStream);
-    channelReady = true;
     started = true;
-    if (initiator == true)
-      doCall();
-    else {
-      pc.setRemoteDescription(new RTCSessionDescription(offerSdp));
-      doAnswer();
+    
+    if (initiator == true) {
+      socket.send("{\"client-id\":\"#{@client_id}\"," +
+                  "\"to-client-id\":\"" + calleeId + "\"," +
+                  "\"type\":\"" + MSG_CALL + "\"," +
+                  "\"time\":\"#{@time}\"}");
+    } else {
+      socket.send("{\"client-id\":\"#{@client_id}\"," +
+                  "\"to-client-id\":\"" + callerId + "\"," +
+                  "\"type\":\"" + MSG_CALL_READY + "\"," +
+                  "\"time\":\"#{@time}\"}");
     }
   }
   
@@ -206,10 +247,12 @@
   }
   
   function waitForRemoteVideo() {
+    console.log('waitForRemoteVideo');
     if (remoteStream.videoTracks.length === 0 || remoteVideo.currentTime > 0) {
       transitionToActive();
     } else {
-      setTimeout(waitForRemoteVideo, 100);
+      console.log('not transition yet');
+      setTimeout(waitForRemoteVideo, 500);
     }
   }
   function transitionToActive() {
