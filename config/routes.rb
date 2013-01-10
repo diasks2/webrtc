@@ -6,6 +6,7 @@ WebrtcRails::Application.routes.draw do
   get "auth/logout"
 
   resources "dialers"
+  post "dialers/voice"
 
   get "main/index"
   post "main/wait"
