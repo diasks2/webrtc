@@ -1,70 +1,15 @@
-%script{:src => "//static.twilio.com/libs/twiliojs/1.1/twilio.min.js", :type => "text/javascript"}
-%script{:src => "https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js", :type => "text/javascript"}
-:javascript
-  Twilio.Device.setup("#{@token}", {debug: true});
- 
-    Twilio.Device.ready(function (device) {
-      $("#log").text("Ready");
-    });
- 
-    Twilio.Device.error(function (error) {
-      $("#log").text("Error: " + error.message);
-    });
- 
-    Twilio.Device.connect(function (conn) {
-      $("#log").text("Successfully established call");
-    });
- 
-    Twilio.Device.disconnect(function (conn) {
-      $("#log").text("Call ended");
-    });
- 
-    Twilio.Device.incoming(function (conn) {
-      $("#log").text("Incoming connection from " + conn.parameters.From);
-      // accept the incoming connection and start two-way audio
-      conn.accept();
-    });
- 
-    function call() {
-      // get the phone number to connect the call to
-      params = {"PhoneNumber": $("#number").val()};
-      Twilio.Device.connect(params);
-    }
- 
-    function hangup() {
-      Twilio.Device.disconnectAll();
-    }
-    
-    function number(btn) {
-      var numText = btn.innerHTML;
-      $("#number").val($("#number").val() + numText);
-    }
+#flash
+  = render 'shared/flash_msg'
 
-%input#number{:name => "number", :placeholder => "Enter a phone number to call", :type => "text"}
-
-%br
-
-%button.btn{:onclick => "number(this);"} 1
-%button.btn{:onclick => "number(this);"} 2
-%button.btn{:onclick => "number(this);"} 3
-%br
-%button.btn{:onclick => "number(this);"} 4
-%button.btn{:onclick => "number(this);"} 5
-%button.btn{:onclick => "number(this);"} 6
-%br
-%button.btn{:onclick => "number(this);"} 7
-%button.btn{:onclick => "number(this);"} 8
-%button.btn{:onclick => "number(this);"} 9
-%br
-%button.btn{:onclick => "number(this);"} *
-%button.btn{:onclick => "number(this);"} 0
-%button.btn{:onclick => "number(this);"} #
-
-%br
-%br
-
-%button.call.btn{:onclick => "call();"}
-  Call
-%button.hangup.btn{:onclick => "hangup();"}
-  Hangup
-#log Loading pigeons...
+#main-content
+  %h3 Call Phone from T-Mobile
+  - if @profile
+    Hello #{@profile['first_name']}!
+    %br
+    = render "dial_pad"
+  - else
+    #login
+      %a{:href => url_for(:controller => 'auth', :action => 'facebook_authenticate')}
+        .btn
+          = image_tag "f_logo.png", :width => 25
+          %span.text Login With Facebook
