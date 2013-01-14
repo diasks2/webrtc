@@ -11,6 +11,8 @@
 }
 
 #card {
+  width: 60%;
+  margin: 0 auto;
   -webkit-transition-property: rotation;
   -webkit-transition-duration: 2s;
   -webkit-transform-style: preserve-3d;
