@@ -55,9 +55,12 @@
       console.log(message);
     
       if (json['type'] == MSG_HELLO) {
+        var button_id = 'call-button-' + json['client-id'];
         $('#online-users').append(
           "<div id='" + json['client-id'] + "'>"+ json['first_name'] + " " + json['last_name'] +
-          " <button type='button' class='btn' data-loading-text='Calling...'>Call</button>" +
+          " <button type='button' class='btn' id='" + button_id +
+          "' onclick='onCallClick(\"" + json['client-id'] + "\");'" +
+          " data-loading-text='Calling...'>Call</button>" +
           "</div>");
           
         socket.send("{\"client-id\":\"#{@client_id}\"," +
