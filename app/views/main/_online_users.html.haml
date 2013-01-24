@@ -45,7 +45,7 @@
                  "\"first_name\":\"#{@profile['first_name']}\"," +
                  "\"last_name\":\"#{@profile['last_name']}\"}"
       });
-    },    
+    },
     callback   : function(message) {
       var json = JSON.parse(message);
 
@@ -334,17 +334,18 @@
                 
       PUBNUB.publish({
         channel: "video_chat_channel",
-        message: sdpMessage1
-      });
-          
-      var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
-                "\"type\":\"" + MSG_SDP + "\"," +
-                "\"sdp-type\":\"offer2\"," +
-                "\"sdp-body\":\"" + body2 + "\"}";
+        message: sdpMessage1,
+        callback: function() {
+          var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"offer2\"," +
+                    "\"sdp-body\":\"" + body2 + "\"}";
       
-      PUBNUB.publish({
-        channel: "video_chat_channel",
-        message: sdpMessage2
+          PUBNUB.publish({
+            channel: "video_chat_channel",
+            message: sdpMessage2
+          });
+        }
       });
     } else if (message['type'] == SDP_ANSWER) {
       var jsonStr = JSON.stringify(message['sdp']);
@@ -357,16 +358,17 @@
                 "\"sdp-body\":\"" + body1 + "\"}";
       PUBNUB.publish({
         channel: "video_chat_channel",
-        message: sdpMessage1
+        message: sdpMessage1,
+        callback: function() {
+          var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
+                    "\"type\":\"" + MSG_SDP + "\"," +
+                    "\"sdp-type\":\"answer2\"," +
+                    "\"sdp-body\":\"" + body2 + "\"}";
+          PUBNUB.publish({
+            channel: "video_chat_channel",
+            message: sdpMessage2 });
+        }
       });
-
-      var sdpMessage2 = "{\"client-id\":\"#{@client_id}\"," +
-                "\"type\":\"" + MSG_SDP + "\"," +
-                "\"sdp-type\":\"answer2\"," +
-                "\"sdp-body\":\"" + body2 + "\"}";
-      PUBNUB.publish({
-        channel: "video_chat_channel",
-        message: sdpMessage2 });
     } else if (message['type'] == SDP_CANDIDATE) {
       var sdpMessage = "{\"client-id\":\"#{@client_id}\"," +
                 "\"type\":\"" + MSG_SDP + "\"," +
