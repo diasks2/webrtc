@@ -9,8 +9,6 @@ gem 'thin'
 
 group :production, :staging do
   gem 'pg'
-  gem 'libv8'
-  gem 'therubyracer'
 end
 group :development do
   gem 'sqlite3'

@@ -4,19 +4,19 @@ class DialersController < ApplicationController
       graph = Koala::Facebook::API.new(session[:oauth_access_token])
       @profile = graph.get_object("me")
       
-      default_client = 'webrtcphone'
-      account_sid = 'AC8299501d55c3b6c62d7b304cc48c9bf7'
-      auth_token = '3c686e6607dd19528396571cd9bf975a'
+      default_client = ENV["TWILLIO_CLIENT_NAME"]
+      account_sid = ENV["TWILLIO_SID"]
+      auth_token = ENV["TWILLIO_AUTH_TOKEN"]
       capability = Twilio::Util::Capability.new account_sid, auth_token
       # Create an application sid at twilio.com/user/account/apps and use it here
-      capability.allow_client_outgoing "AP3e36a472688f5917dc76724025fb1e3d"
+      capability.allow_client_outgoing ENV["TWILLIO_CLIENT_OUTGOING"]
       capability.allow_client_incoming default_client
       @token = capability.generate
     end
   end
   
   def voice
-    caller_id = "+12066733169"
+    caller_id = ENV["TWILLIO_CALLER_ID"]
     
     number = params[:PhoneNumber]
     response = Twilio::TwiML::Response.new do |r|

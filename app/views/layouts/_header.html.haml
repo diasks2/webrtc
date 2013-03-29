@@ -4,7 +4,7 @@
       = link_to @title, root_path, :class => 'brand logo'
       %ul.nav
         <li #{if controller.controller_name == 'main' then 'class=active' end}>#{link_to 'Home', '/'}
-        <li #{if controller.controller_name == 'main' then '' end}>#{link_to 'Dialer', :controller => :dialers, :action => :index}
+        <li #{if controller.controller_name == 'dialers' then 'class=active' end}>#{link_to 'Dialer', :controller => :dialers, :action => :index}
       %ul.nav.pull-right
         - if @profile
           %li

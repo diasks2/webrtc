@@ -1,0 +1,14 @@
+# Add account credentials and API keys here.
+# See http://railsapps.github.com/rails-environment-variables.html
+# This file should be listed in .gitignore to keep your settings secret!
+# Each entry sets a local environment variable and overrides ENV variables in the Unix shell.
+# For example, setting:
+# GMAIL_USERNAME: Your_Gmail_Username
+# makes 'Your_Gmail_Username' available as ENV["GMAIL_USERNAME"]
+# Add application configuration variables here, as shown below.
+#
+TWILLIO_CLIENT_NAME: Your_Twillio_Client
+TWILLIO_SID: Your_Twillio_SID
+TWILLIO_AUTH_TOKEN: Your_Twillio_Auth_Token
+TWILLIO_CLIENT_OUTGOING: Your_Twillio_Client_Outgoing
+TWILLIO_CALLER_ID: Your_Twillio_Caller_ID
